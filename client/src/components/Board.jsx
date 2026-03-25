@@ -30,6 +30,7 @@ export default function Board() {
   const [editingCard, setEditingCard] = useState(null)
   const [creatingColumnId, setCreatingColumnId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
   const [toast, setToast] = useState(null)
 
   const [userName, setUserName] = useState(sessionStorage.getItem('kanban-user') || '')
@@ -42,7 +43,8 @@ export default function Board() {
     async function init() {
       const data = await getBoard(id)
       if (!data) {
-        navigate('/')
+        setLoading(false)
+        setNotFound(true)
         return
       }
       setBoard(data)
@@ -250,6 +252,16 @@ export default function Board() {
     setCards(prev => prev.filter(c => c.id !== cardId))
     setEditingCard(null)
     socket.emit('card-delete', { cardId })
+  }
+
+  if (notFound) {
+    return (
+      <div className="loading-screen">
+        <p style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Board not found</p>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>This board may have been deleted or the link is invalid.</p>
+        <button className="btn btn-primary" onClick={() => navigate('/')}>Go Home</button>
+      </div>
+    )
   }
 
   if (loading) {

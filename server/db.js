@@ -2,7 +2,8 @@ const Database = require('better-sqlite3')
 const path = require('path')
 const { nanoid } = require('nanoid')
 
-const db = new Database(path.join(__dirname, 'kanban.db'))
+const DB_DIR = process.env.DB_PATH || __dirname
+const db = new Database(path.join(DB_DIR, 'kanban.db'))
 db.pragma('journal_mode = WAL')
 db.pragma('foreign_keys = ON')
 
