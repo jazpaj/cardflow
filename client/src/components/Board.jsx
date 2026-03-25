@@ -32,13 +32,12 @@ export default function Board() {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
 
-  const userName = sessionStorage.getItem('kanban-user')
+  const [userName, setUserName] = useState(sessionStorage.getItem('kanban-user') || '')
+  const [nameInput, setNameInput] = useState('')
+  const [needsName, setNeedsName] = useState(!sessionStorage.getItem('kanban-user'))
 
   useEffect(() => {
-    if (!userName) {
-      navigate('/')
-      return
-    }
+    if (needsName) return
 
     async function init() {
       const data = await getBoard(id)
@@ -80,7 +79,44 @@ export default function Board() {
       socket.off('card-assigned')
       socket.disconnect()
     }
-  }, [id])
+  }, [id, needsName])
+
+  const handleNameSubmit = (e) => {
+    e.preventDefault()
+    if (!nameInput.trim()) return
+    const name = nameInput.trim()
+    sessionStorage.setItem('kanban-user', name)
+    setUserName(name)
+    setNeedsName(false)
+  }
+
+  if (needsName) {
+    return (
+      <div className="home-page">
+        <div className="home-card">
+          <h2 style={{ marginBottom: '0.5rem', fontWeight: 800 }}>Join Board</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>
+            Enter your name to join this board
+          </p>
+          <form onSubmit={handleNameSubmit}>
+            <div className="form-group">
+              <label>Your Name</label>
+              <input
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="Enter your name"
+                autoFocus
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary btn-full">
+              Join Board
+            </button>
+          </form>
+        </div>
+      </div>
+    )
+  }
 
   const getCardsForColumn = useCallback((columnId) => {
     return cards.filter(c => c.column_id === columnId).sort((a, b) => a.position - b.position)
