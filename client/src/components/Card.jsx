@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Calendar, User, X } from 'lucide-react'
+import { useRef } from 'react'
 
 const LABEL_COLORS = {
   red: '#e74c3c',
@@ -23,11 +24,12 @@ export default function Card({ card, isOverlay, onClick, onDelete }) {
     isDragging,
   } = useSortable({ id: card.id })
 
+  const pointerStart = useRef(null)
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
-    cursor: 'grab',
   }
 
   let labels = []
@@ -38,16 +40,34 @@ export default function Card({ card, isOverlay, onClick, onDelete }) {
   const firstLabel = labels[0]
   const borderColor = firstLabel && LABEL_COLORS[firstLabel] ? LABEL_COLORS[firstLabel] : 'transparent'
 
+  const handlePointerDown = (e) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY }
+  }
+
+  const handlePointerUp = (e) => {
+    if (!pointerStart.current) return
+    const dx = Math.abs(e.clientX - pointerStart.current.x)
+    const dy = Math.abs(e.clientY - pointerStart.current.y)
+    // Only count as click if pointer barely moved (not a drag)
+    if (dx < 5 && dy < 5 && onClick) {
+      onClick()
+    }
+    pointerStart.current = null
+  }
+
   return (
     <div
       ref={isOverlay ? undefined : setNodeRef}
       style={isOverlay ? { cursor: 'grabbing', transform: 'rotate(3deg)' } : style}
       className={`card-item ${isOverlay ? 'card-overlay' : ''}`}
+      {...(isOverlay ? {} : { ...attributes, ...listeners })}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
     >
       {onDelete && (
         <button
           className="card-delete-btn"
-          onPointerDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => { e.stopPropagation(); pointerStart.current = null }}
           onClick={(e) => { e.stopPropagation(); onDelete() }}
           title="Delete card"
         >
@@ -55,12 +75,7 @@ export default function Card({ card, isOverlay, onClick, onDelete }) {
         </button>
       )}
       <div className="card-border-accent" style={{ backgroundColor: borderColor }} />
-      <div
-        className="card-content"
-        {...(isOverlay ? {} : { ...attributes, ...listeners })}
-        onClick={onClick}
-        style={{ cursor: 'grab' }}
-      >
+      <div className="card-content">
         {labels.length > 0 && (
           <div className="card-labels">
             {labels.map((l, i) => (
