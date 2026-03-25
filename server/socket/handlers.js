@@ -63,6 +63,17 @@ function registerHandlers(io, socket) {
       if (boardId) {
         const board = db.getBoard(boardId)
         socket.to(boardId).emit('board-updated', board)
+
+        // Notify assigned user
+        if (fields.assignee) {
+          const cardTitle = fields.title || ''
+          const card = board.cards.find(c => c.id === cardId)
+          io.to(boardId).emit('card-assigned', {
+            assignee: fields.assignee,
+            cardTitle: card ? card.title : cardTitle,
+            assignedBy: socket.userName || 'Someone',
+          })
+        }
       }
     } catch (e) {
       console.error('card-update error:', e.message)

@@ -12,7 +12,7 @@ const LABEL_OPTIONS = [
   { name: 'teal', color: '#00cec9' },
 ]
 
-export default function CardModal({ card, mode = 'edit', onUpdate, onDelete, onCreate, onClose }) {
+export default function CardModal({ card, mode = 'edit', users = [], onUpdate, onDelete, onCreate, onClose }) {
   const [title, setTitle] = useState(card.title || '')
   const [description, setDescription] = useState(card.description || '')
   const [assignee, setAssignee] = useState(card.assignee || '')
@@ -34,8 +34,10 @@ export default function CardModal({ card, mode = 'edit', onUpdate, onDelete, onC
     if (!isCreate && description !== (card.description || '')) onUpdate({ description })
   }
 
-  const handleAssigneeBlur = () => {
-    if (!isCreate && assignee !== (card.assignee || '')) onUpdate({ assignee })
+  const handleAssigneeChange = (e) => {
+    const val = e.target.value
+    setAssignee(val)
+    if (!isCreate) onUpdate({ assignee: val })
   }
 
   const handleDueDateChange = (e) => {
@@ -100,14 +102,17 @@ export default function CardModal({ card, mode = 'edit', onUpdate, onDelete, onC
 
           <div className="modal-row">
             <div className="modal-field">
-              <label><User size={14} /> Assignee</label>
-              <input
+              <label><User size={14} /> Assign To</label>
+              <select
                 value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-                onBlur={handleAssigneeBlur}
+                onChange={handleAssigneeChange}
                 className="modal-input"
-                placeholder="Assign to..."
-              />
+              >
+                <option value="">Unassigned</option>
+                {users.map((u, i) => (
+                  <option key={i} value={u.name}>{u.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="modal-field">

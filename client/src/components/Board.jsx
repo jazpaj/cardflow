@@ -11,6 +11,14 @@ import UserBar from './UserBar'
 import { Plus } from 'lucide-react'
 import { nanoid } from 'nanoid'
 
+function Toast({ message, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000)
+    return () => clearTimeout(t)
+  }, [])
+  return <div className="toast-notification">{message}</div>
+}
+
 export default function Board() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -22,6 +30,7 @@ export default function Board() {
   const [editingCard, setEditingCard] = useState(null)
   const [creatingColumnId, setCreatingColumnId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
 
   const userName = sessionStorage.getItem('kanban-user')
 
@@ -57,10 +66,18 @@ export default function Board() {
       setUsers(userList)
     })
 
+    socket.on('card-assigned', ({ assignee, cardTitle, assignedBy }) => {
+      const myName = sessionStorage.getItem('kanban-user')
+      if (assignee.toLowerCase() === myName?.toLowerCase()) {
+        setToast(`${assignedBy} assigned you to "${cardTitle}"`)
+      }
+    })
+
     return () => {
       socket.emit('leave-board', { boardId: id })
       socket.off('board-updated')
       socket.off('users-updated')
+      socket.off('card-assigned')
       socket.disconnect()
     }
   }, [id])
@@ -249,6 +266,7 @@ export default function Board() {
         <CardModal
           card={editingCard}
           mode="edit"
+          users={users}
           onUpdate={(fields) => {
             handleUpdateCard(editingCard.id, fields)
             setEditingCard(prev => ({ ...prev, ...fields }))
@@ -262,10 +280,13 @@ export default function Board() {
         <CardModal
           card={{ title: '', description: '', assignee: '', labels: '[]', due_date: null }}
           mode="create"
+          users={users}
           onCreate={handleConfirmCreate}
           onClose={() => setCreatingColumnId(null)}
         />
       )}
+
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   )
 }
